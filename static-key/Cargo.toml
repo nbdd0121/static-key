@@ -1,0 +1,8 @@
+[package]
+name = "static-key"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rustix = { version = "0.38", features = ["param", "process", "mm"] }
+static-key-macros = { path = "../static-key-macros" }
