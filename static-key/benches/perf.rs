@@ -4,8 +4,8 @@
 extern crate test;
 
 use core::sync::atomic::*;
-use std::hint::black_box;
 use static_key::{static_if, static_key};
+use std::hint::black_box;
 
 #[inline(never)]
 fn foo() {

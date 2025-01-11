@@ -7,4 +7,7 @@ mod patch;
 mod static_if;
 mod static_match;
 
-pub use static_match::{StaticKey, CallSite};
+pub use static_match::StaticKey;
+
+#[doc(hidden)]
+pub use static_match::CallSite;

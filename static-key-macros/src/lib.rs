@@ -15,6 +15,7 @@ struct StaticMatch {
 impl Parse for StaticMatch {
     fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
         let target_arch = input.parse()?;
+        let _: Token![,] = input.parse()?;
         let crate_path = input.parse()?;
         let _: Token![;] = input.parse()?;
         let key = input.parse()?;

@@ -2,7 +2,11 @@ use std::cell::Cell;
 
 use crate::patch::TextGuard;
 
-/// `static_match` keys.
+/// An object that is rarely modified but frequently matched on.
+///
+/// This type can only be constructed using [`static_key!`] macro.
+///
+/// [`static_key!`]: `crate::static_key!`
 pub struct StaticKey<T: 'static> {
     /// Call/use sites that reference this key.
     callsites: Cell<Option<&'static CallSite<T>>>,
@@ -111,11 +115,23 @@ impl<T> StaticKey<T> {
         }
     }
 
+    /// Acquire a reference to the value of this key.
+    ///
+    /// # Performance
+    ///
+    /// `StaticKey`s are not intended to be used like cell/locks, so this is not an especially
+    /// optimised accessor. This method should be rarely used.
     pub fn with<R>(&self, callback: impl FnOnce(&T) -> R) -> R {
         let _text = crate::patch::lock_text();
         callback(unsafe { &*self.value.as_ptr() })
     }
 
+    /// Returns a copy of the value of this key.
+    ///
+    /// # Performance
+    ///
+    /// `StaticKey`s are not intended to be used like cell/locks, so this is not an especially
+    /// optimised accessor. This method should be rarely used.
     pub fn get(&self) -> T
     where
         T: Copy,
@@ -123,6 +139,12 @@ impl<T> StaticKey<T> {
         self.with(|x| *x)
     }
 
+    /// Sets the value of this key.
+    ///
+    /// # Performance
+    ///
+    /// `StaticKey`s are not intended to be frequently updated, so this is slow in performance.
+    /// This method should be rarely used.
     pub fn set(&self, value: T) {
         let mut text = crate::patch::lock_text();
         let mut callsite = self.callsites.get();
@@ -134,25 +156,90 @@ impl<T> StaticKey<T> {
     }
 }
 
+/// Declares a new static key.
+///
+/// # Syntax
+///
+/// ```
+/// # use static_key::*;
+/// static_key!(pub FOO: u32 = 1);
+/// static_key!(BAR: bool = false);
+/// ```
+///
+/// The key must be `Send`:
+/// ```compile_fail
+/// # use static_key::*;
+/// static_key!(BAZ: *const () = core::ptr::null()); // ERROR
+/// ```
+///
+/// and the initializer must be const:
+/// ```compile_fail
+/// # use static_key::*;
+/// fn baz() -> u32 { 1 }
+/// static_key!(BAZ: u32 = baz()); // ERROR
+/// ```
 #[macro_export]
 macro_rules! static_key {
-    ($name: ident: $ty:ty = $init_value:expr) => {
-        static $name: $crate::StaticKey<$ty> = unsafe { $crate::StaticKey::new($init_value) };
+    ($vis:vis $name: ident: $ty:ty = $init_value:expr) => {
+        $vis static $name: $crate::StaticKey<$ty> = {
+            let value: $ty = $init_value;
+            unsafe { $crate::StaticKey::new(value) }
+        };
     };
 }
 
+#[doc(hidden)]
 #[macro_export]
 #[cfg(target_arch = "x86_64")]
-macro_rules! static_match {
-    ($($tt:tt)*) => {
-        $crate::parse_static_match!("x86_64" $crate; $($tt)*);
+macro_rules! with_arch {
+    ($callback: ident, $($tt:tt)*) => {
+        $crate::$callback!("x86_64", $($tt)*)
     };
 }
 
+#[doc(hidden)]
 #[macro_export]
 #[cfg(target_arch = "riscv64")]
+macro_rules! with_arch {
+    ($callback: path, $($tt:tt)*) => {
+        $crate::$callback!("riscv64", $($tt)*)
+    };
+}
+
+/// Match on a static key.
+///
+/// # Syntax
+///
+/// This macro uses a syntax similar to `match`:
+/// ```
+/// # #![feature(asm_goto)]
+/// # use static_key::*;
+/// static_key!(FOO: u32 = 1);
+///
+/// let value = static_match! {
+///   // First declare what's the key and its type
+///   FOO: u32;
+///   // Then match arm follows. Note that the type being matched is a reference type.
+///   1 => 1,
+///   x if *x == 2 => {
+///     println!("Guard is supported");
+///     2
+///   }
+///   // You can put `#[likely]` on an arm to optimise for common case.
+///   #[likely]
+///   0 => 0,
+///   _ => unreachable!(),
+/// };
+/// ```
+///
+/// The entire `static_match!` will be compiled to either a single instruction, either
+/// a no-op or a single jump.
+///
+/// Note that the match arm may bind variables for the guard only; bindings are not visible
+/// inside the match arm body.
+#[macro_export]
 macro_rules! static_match {
     ($($tt:tt)*) => {
-        $crate::parse_static_match!("riscv64" $crate; $($tt)*);
+        $crate::with_arch!(parse_static_match, $crate; $($tt)*);
     };
 }
