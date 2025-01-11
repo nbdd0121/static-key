@@ -1,3 +1,5 @@
+#![warn(unsafe_op_in_unsafe_fn)]
+
 #[doc(hidden)]
 pub use static_key_macros::parse_static_match;
 

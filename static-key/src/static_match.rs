@@ -97,7 +97,7 @@ impl<T> CallSite<T> {
 
         // Registration happens at binary loading time and normal execution hasn't started.
         // So syncing is not necessary here.
-        text.skip_sync();
+        unsafe { text.skip_sync() };
     }
 }
 

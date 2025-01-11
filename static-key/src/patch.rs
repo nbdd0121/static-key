@@ -88,7 +88,7 @@ pub unsafe fn replace_instruction(text_guard: &mut TextGuard, insn: *mut u8, new
 
     text_guard.need_sync = true;
 
-    arch::replace_instruction(insn, new_insn);
+    unsafe { arch::replace_instruction(insn, new_insn) };
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -98,7 +98,7 @@ mod arch {
     pub(super) unsafe fn replace_instruction(insn: *mut u8, new_insn: &[u8]) {
         // Simple path for single-byte replacement.
         if new_insn.len() == 1 {
-            (*insn.cast::<AtomicU8>()).store(new_insn[0], Ordering::SeqCst);
+            unsafe { (*insn.cast::<AtomicU8>()).store(new_insn[0], Ordering::SeqCst) };
             return;
         }
 
