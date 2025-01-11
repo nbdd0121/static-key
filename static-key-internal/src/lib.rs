@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use proc_macro2::{Literal, Span};
-use syn::{parse::Parse, parse_macro_input, Arm, LitStr, Path, Token, Type};
+use syn::{Arm, LitStr, Path, Token, Type, parse::Parse, parse_macro_input};
 
 struct StaticMatch {
     target_arch: LitStr,

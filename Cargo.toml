@@ -2,5 +2,5 @@
 resolver = "3"
 members = [
   "static-key",
-  "static-key-macros",
+  "static-key-internal",
 ]

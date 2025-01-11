@@ -2,7 +2,10 @@
 name = "static-key"
 version = "0.1.0"
 edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nbdd0121/static-key"
+description = "A implementation of static keys in Rust"
 
 [dependencies]
 rustix = { version = "0.38", features = ["param", "process", "mm"] }
-static-key-macros = { path = "../static-key-macros" }
+static-key-internal = { version = "=0.1.0", path = "../static-key-internal" }

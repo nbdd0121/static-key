@@ -66,11 +66,11 @@ name = "static-key"
 version = "0.1.0"
 dependencies = [
  "rustix",
- "static-key-macros",
+ "static-key-internal",
 ]
 
 [[package]]
-name = "static-key-macros"
+name = "static-key-internal"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",
